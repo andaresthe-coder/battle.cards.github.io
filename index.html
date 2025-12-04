@@ -3,54 +3,63 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CardBattle v.3 - Multijugador Local</title>
+<title>CardBattle v.3.1 Medieval Final</title>
 <style>
-body { font-family: 'Segoe UI', sans-serif; background: #1e1e2f; color: #f0f0f0; margin:0; }
-header { background: #2c2c44; padding:1rem; text-align:center; font-size:2rem; font-weight:bold; color:#ffcc00;}
-section { padding:1rem 2rem;}
-h2 { color: #00ffff; text-align:center; }
-.cards-container { display:flex; flex-wrap:wrap; gap:1rem; justify-content:center; margin-top:1rem; }
-.card { 
-    background:#2c2c44; border:2px solid #555577; border-radius:12px; padding:1rem; text-align:center; 
-    cursor:pointer; width:120px; height:160px; display:flex; flex-direction:column; justify-content:space-between;
-    transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
-}
+/* ====== FONDO INTERACTIVO ====== */
+body, html { margin:0; padding:0; height:100%; font-family: 'Segoe UI', sans-serif; overflow:hidden; background:#000; }
+canvas#bgCanvas { position:absolute; top:0; left:0; z-index:0; }
+
+/* ====== MENU ====== */
+#menu { position:absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85);
+        display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:10; }
+#menu h1 { font-size:3rem; color:#ffcc00; margin-bottom:2rem; text-shadow: 2px 2px 8px #000; }
+#menu button { padding:1rem 2rem; margin:0.5rem; font-size:1.2rem; border:none; border-radius:8px; background:#222; color:#ffcc00; cursor:pointer; transition: 0.3s; }
+#menu button:hover { background:#555; }
+
+/* ====== SECCION DE JUEGO ====== */
+#game { position:relative; z-index:1; padding:1rem 2rem; display:none; color:#f0f0f0; }
+h2 { color:#ffcc00; text-align:center; }
+.cards-container { display:flex; flex-wrap:wrap; gap:1rem; justify-content:center; margin-top:1rem; z-index:1; position:relative;}
+.card { background:#2c2c44; border:2px solid #555577; border-radius:12px; padding:1rem; text-align:center; width:120px; height:160px; display:flex; flex-direction:column; justify-content:space-between; cursor:pointer; transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s; z-index:1; position:relative; }
 .card.selected { border-color:#ff9900; transform:scale(1.05); box-shadow:0 0 15px #ff9900; }
 .card:hover { border-color:#ffcc00; transform: translateY(-5px); box-shadow:0 0 10px #ffcc00;}
 .card img { width: 80px; height: 80px; margin:auto; border-radius:8px; }
 .hand { border-top:2px solid #555577; margin-top:1rem; padding-top:1rem; min-height:180px;}
-.status { display:flex; justify-content:space-around; margin-bottom:1rem; }
-.status div { background:#333355; padding:1rem; border-radius:12px; min-width:120px; text-align:center; transition: transform 0.3s;}
+.status { display:flex; justify-content:space-around; margin-bottom:1rem; z-index:1; position:relative; }
+.status div { background:#333355; padding:1rem; border-radius:12px; min-width:120px; text-align:center; transition: transform 0.3s; }
 .activePlayer { transform: scale(1.1); border:2px solid #ffcc00; }
-button { padding:0.5rem 1rem; margin:0.2rem; border:none; border-radius:6px; background:#555577; color:#fff; cursor:pointer; transition: background 0.3s;}
-button:hover { background:#777799;}
-.damage { animation: shake 0.5s; }
-.heal { animation: glow 0.5s; }
-@keyframes shake {
-  0% { transform: translate(0px,0px);}
-  25% { transform: translate(5px,0px);}
-  50% { transform: translate(-5px,0px);}
-  75% { transform: translate(5px,0px);}
-  100% { transform: translate(0px,0px);}
-}
-@keyframes glow {
-  0% { box-shadow: 0 0 0px #00ff00;}
-  50% { box-shadow: 0 0 15px #00ff00;}
-  100% { box-shadow: 0 0 0px #00ff00;}
-}
-.rey { font-weight:bold; font-size:1.2rem; margin-top:5px; transition: transform 0.3s; }
-.rey.damage { transform: scale(1.2); color:#ff0000; }
-.rey.heal { transform: scale(1.2); color:#00ff00; }
+
+.rey-container { position:relative; width:150px; height:20px; background:#555; border-radius:10px; margin:auto; margin-top:5px; }
+.rey-bar { height:100%; width:100%; background:#ffcc00; border-radius:10px; transition: width 0.5s; }
+.damage, .heal { animation:shake 0.5s; }
+@keyframes shake { 0%{transform:translate(0)}25%{transform:translate(5px)}50%{transform:translate(-5px)}75%{transform:translate(5px)}100%{transform:translate(0)} }
+@keyframes glow { 0%{box-shadow:0 0 0px #00ff00;}50%{box-shadow:0 0 15px #00ff00;}100%{box-shadow:0 0 0px #00ff00;} }
 </style>
 </head>
 <body>
 
-<header>CardBattle v.3 - Multijugador Local</header>
+<!-- Fondo interactivo -->
+<canvas id="bgCanvas"></canvas>
 
-<section>
+<!-- MENU -->
+<div id="menu">
+    <h1>CardBattle v.3.1 Medieval</h1>
+    <button onclick="startGame()">Iniciar Juego</button>
+    <button onclick="alert('Manual:\n- Alterna turnos\n- Usa cartas para atacar, defender o hechizar\n- Trampas y especiales activas\n- Destruye el Rey enemigo para ganar')">Manual</button>
+    <button onclick="alert('Gracias por jugar!')">Salir</button>
+</div>
+
+<!-- JUEGO -->
+<div id="game">
 <div class="status">
-    <div id="player1Status">Jugador 1 Rey: <span class="rey" id="player1Life">1000</span> ❤️</div>
-    <div id="player2Status">Jugador 2 Rey: <span class="rey" id="player2Life">1000</span> ❤️</div>
+    <div id="player1Status">
+        Jugador 1 Rey:
+        <div class="rey-container"><div id="player1Life" class="rey-bar"></div></div>
+    </div>
+    <div id="player2Status">
+        Jugador 2 Rey:
+        <div class="rey-container"><div id="player2Life" class="rey-bar"></div></div>
+    </div>
 </div>
 
 <h2>Baraja Central</h2>
@@ -63,40 +72,57 @@ button:hover { background:#777799;}
     <p>Turno de: <span id="currentPlayer">Jugador 1</span></p>
     <button onclick="endTurn()">Terminar Turno</button>
 </div>
-</section>
-
-<footer>CardBattle v.3 © 2025</footer>
+</div>
 
 <script>
-// ================== CARTAS ==================
-const deck = [
-    {name:"Cañón Blitz", type:"Ataque", life:800, attack:700, img:"https://via.placeholder.com/80/ff0000/000000?text=Cañón"},
-    {name:"Capitán Ígneo", type:"Ataque", life:500, attack:400, img:"https://via.placeholder.com/80/ff7700/000000?text=Igneo"},
-    {name:"Arquero", type:"Ataque", life:100, attack:90, img:"https://via.placeholder.com/80/00ff00/000000?text=Arquero"},
-    {name:"Caballero", type:"Ataque", life:200, attack:100, img:"https://via.placeholder.com/80/0000ff/ffffff?text=Caballero"},
-    {name:"Muralla", type:"Defensa", life:500, attack:0, img:"https://via.placeholder.com/80/888888/000000?text=Muralla"},
-    {name:"Escudero", type:"Defensa", life:300, attack:0, img:"https://via.placeholder.com/80/aaaaaa/000000?text=Escudero"},
-    {name:"Curación", type:"Hechizo", life:0, attack:0, img:"https://via.placeholder.com/80/00ffcc/000000?text=Curar"},
-    {name:"Veneno", type:"Hechizo", life:0, attack:0, img:"https://via.placeholder.com/80/cc00cc/000000?text=Veneno"},
-    {name:"Paquete Real", type:"Hechizo", life:0, attack:0, img:"https://via.placeholder.com/80/ffff00/000000?text=Paquete"},
-    {name:"Vacío", type:"Trampa", life:0, attack:0, img:"https://via.placeholder.com/80/000000/ffffff?text=Vacío"},
-    {name:"Espinas", type:"Trampa", life:0, attack:0, img:"https://via.placeholder.com/80/880000/ffffff?text=Espinas"},
-    {name:"Contragolpe", type:"Trampa", life:0, attack:0, img:"https://via.placeholder.com/80/000088/ffffff?text=Contra"},
-    {name:"Tótem", type:"Especial", life:0, attack:0, img:"https://via.placeholder.com/80/ff00ff/ffffff?text=Tótem"},
-    {name:"Fragmentos Blitz", type:"Especial", life:0, attack:0, img:"https://via.placeholder.com/80/00ffff/000000?text=Fragmento"}
+// ===== MENU =====
+function startGame(){
+    document.getElementById('menu').style.display='none';
+    document.getElementById('game').style.display='block';
+}
+
+// ===== FONDO INTERACTIVO MEDIEVAL =====
+const canvas = document.getElementById('bgCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const particles=[];
+for(let i=0;i<150;i++){
+    particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,size:Math.random()*2+1,speedX:Math.random()*1-0.5,speedY:Math.random()*1-0.5,color:`rgba(255,215,0,${Math.random()})`});
+}
+function animate(){ ctx.fillStyle='#000'; ctx.fillRect(0,0,canvas.width,canvas.height); particles.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fillStyle=p.color; ctx.fill(); p.x+=p.speedX; p.y+=p.speedY; if(p.x<0)p.x=canvas.width;if(p.x>canvas.width)p.x=0;if(p.y<0)p.y=canvas.height;if(p.y>canvas.height)p.y=0; }); requestAnimationFrame(animate);}
+animate();
+
+// ====== CARTAS ======
+const deck=[
+{name:"Cañón Blitz", type:"Ataque", life:800, attack:700, img:"https://via.placeholder.com/80/ff0000/000000?text=Cañón"},
+{name:"Capitán Ígneo", type:"Ataque", life:500, attack:400, img:"https://via.placeholder.com/80/ff7700/000000?text=Igneo"},
+{name:"Arquero", type:"Ataque", life:100, attack:90, img:"https://via.placeholder.com/80/00ff00/000000?text=Arquero"},
+{name:"Caballero", type:"Ataque", life:200, attack:100, img:"https://via.placeholder.com/80/0000ff/ffffff?text=Caballero"},
+{name:"Muralla", type:"Defensa", life:500, attack:0, img:"https://via.placeholder.com/80/888888/000000?text=Muralla"},
+{name:"Escudero", type:"Defensa", life:300, attack:0, img:"https://via.placeholder.com/80/aaaaaa/000000?text=Escudero"},
+{name:"Curación", type:"Hechizo", life:0, attack:0, img:"https://via.placeholder.com/80/00ffcc/000000?text=Curar"},
+{name:"Veneno", type:"Hechizo", life:0, attack:0, img:"https://via.placeholder.com/80/cc00cc/000000?text=Veneno"},
+{name:"Paquete Real", type:"Hechizo", life:0, attack:0, img:"https://via.placeholder.com/80/ffff00/000000?text=Paquete"},
+{name:"Vacío", type:"Trampa", life:0, attack:0, img:"https://via.placeholder.com/80/000000/ffffff?text=Vacío"},
+{name:"Espinas", type:"Trampa", life:0, attack:0, img:"https://via.placeholder.com/80/880000/ffffff?text=Espinas"},
+{name:"Contragolpe", type:"Trampa", life:0, attack:0, img:"https://via.placeholder.com/80/000088/ffffff?text=Contra"},
+{name:"Tótem", type:"Especial", life:0, attack:0, img:"https://via.placeholder.com/80/ff00ff/ffffff?text=Tótem"},
+{name:"Fragmentos Blitz", type:"Especial", life:0, attack:0, img:"https://via.placeholder.com/80/00ffff/000000?text=Fragmento"}
 ];
 
-let playerHands = [[],[]];
-let playerLife = [1000,1000];
-let currentPlayer = 0;
+let playerHands=[[],[]];
+let playerLife=[1000,1000];
+let currentPlayer=0;
 
-const deckContainer = document.getElementById('deckContainer');
-const handContainer = document.getElementById('handContainer');
-const player1LifeSpan = document.getElementById('player1Life');
-const player2LifeSpan = document.getElementById('player2Life');
-const currentPlayerSpan = document.getElementById('currentPlayer');
-const player1Status = document.getElementById('player1Status');
-const player2Status = document.getElementById('player2Status');
+const deckContainer=document.getElementById('deckContainer');
+const handContainer=document.getElementById('handContainer');
+const player1LifeSpan=document.getElementById('player1Life');
+const player2LifeSpan=document.getElementById('player2Life');
+const currentPlayerSpan=document.getElementById('currentPlayer');
+const player1Status=document.getElementById('player1Status');
+const player2Status=document.getElementById('player2Status');
 
 // Mostrar baraja
 deck.forEach((card,index)=>{
@@ -107,111 +133,54 @@ deck.forEach((card,index)=>{
     deckContainer.appendChild(cardDiv);
 });
 
-// Tomar carta
-function takeCard(index){
-    const card = deck[index];
-    playerHands[currentPlayer].push({...card});
-    renderHand();
-}
-
-// Renderizar mano
-function renderHand(){
-    handContainer.innerHTML='';
-    playerHands[currentPlayer].forEach((card,i)=>{
-        const cardDiv=document.createElement('div');
-        cardDiv.classList.add('card');
-        cardDiv.innerHTML=`<img src="${card.img}" alt="${card.name}"><h4>${card.name}</h4><p>${card.type}</p>`;
-        cardDiv.onclick=()=>playCard(i,cardDiv);
-        handContainer.appendChild(cardDiv);
-    });
-    highlightActivePlayer();
-}
-
-// Destacar jugador activo
-function highlightActivePlayer(){
-    player1Status.classList.remove('activePlayer');
-    player2Status.classList.remove('activePlayer');
-    if(currentPlayer===0) player1Status.classList.add('activePlayer');
-    else player2Status.classList.add('activePlayer');
-}
-
-// Jugar carta con animaciones v.3
+// ===== FUNCIONES DE JUEGO =====
+function takeCard(index){ playerHands[currentPlayer].push({...deck[index]}); renderHand(); }
+function renderHand(){ handContainer.innerHTML=''; playerHands[currentPlayer].forEach((card,i)=>{ const cardDiv=document.createElement('div'); cardDiv.classList.add('card'); cardDiv.innerHTML=`<img src="${card.img}"><h4>${card.name}</h4><p>${card.type}</p>`; cardDiv.onclick=()=>playCard(i,cardDiv); handContainer.appendChild(cardDiv); }); highlightActivePlayer(); }
+function highlightActivePlayer(){ player1Status.classList.remove('activePlayer'); player2Status.classList.remove('activePlayer'); if(currentPlayer===0) player1Status.classList.add('activePlayer'); else player2Status.classList.add('activePlayer'); }
 function playCard(i,cardDiv){
-    const card = playerHands[currentPlayer][i];
-    const enemy = currentPlayer===0?1:0;
-    let enemyReySpan = enemy===0?player1LifeSpan:player2LifeSpan;
-    let currentReySpan = currentPlayer===0?player1LifeSpan:player2LifeSpan;
+    const card=playerHands[currentPlayer][i]; const enemy=currentPlayer===0?1:0;
+    let enemyReySpan=enemy===0?player1LifeSpan:player2LifeSpan;
+    let currentReySpan=currentPlayer===0?player1LifeSpan:player2LifeSpan;
 
     switch(card.type){
-        case "Ataque":
-            playerLife[enemy]-=card.attack;
-            enemyReySpan.classList.add('damage');
-            break;
-        case "Defensa":
-            playerLife[currentPlayer]+=card.life;
-            currentReySpan.classList.add('heal');
-            break;
+        case "Ataque": playerLife[enemy]-=card.attack; createParticles(enemyReySpan,'#ff0000'); break;
+        case "Defensa": playerLife[currentPlayer]+=card.life; createParticles(currentReySpan,'#00ff00'); break;
         case "Hechizo":
-            if(card.name==="Curación"){playerLife[currentPlayer]+=100; currentReySpan.classList.add('heal');}
-            if(card.name==="Veneno"){playerLife[enemy]-=100; enemyReySpan.classList.add('damage');}
-            if(card.name==="Paquete Real"){
-                for(let j=0;j<3;j++){playerHands[currentPlayer].push({...deck[Math.floor(Math.random()*deck.length)])})}
-                alert("Paquete Real: +3 cartas y turno extra");
-            }
-            break;
+            if(card.name==="Curación"){playerLife[currentPlayer]+=100; createParticles(currentReySpan,'#00ff00');}
+            if(card.name==="Veneno"){playerLife[enemy]-=100; createParticles(enemyReySpan,'#ff0000');}
+            if(card.name==="Paquete Real"){ for(let j=0;j<3;j++){playerHands[currentPlayer].push({...deck[Math.floor(Math.random()*deck.length)])})} alert("Paquete Real: +3 cartas y turno extra");} break;
         case "Trampa":
-            if(card.name==="Vacío"){playerLife[enemy]-=150; enemyReySpan.classList.add('damage');}
-            if(card.name==="Espinas"){playerLife[enemy]-=50; enemyReySpan.classList.add('damage');}
-            if(card.name==="Contragolpe"){playerLife[enemy]-=100; playerLife[currentPlayer]-=50; enemyReySpan.classList.add('damage'); currentReySpan.classList.add('damage');}
-            break;
+            if(card.name==="Vacío"){playerLife[enemy]-=150; createParticles(enemyReySpan,'#ff0000');}
+            if(card.name==="Espinas"){playerLife[enemy]-=50; createParticles(enemyReySpan,'#ff0000');}
+            if(card.name==="Contragolpe"){playerLife[enemy]-=100; playerLife[currentPlayer]-=50; createParticles(enemyReySpan,'#ff0000'); createParticles(currentReySpan,'#ff0000');} break;
         case "Especial":
-            if(card.name==="Tótem"){playerLife[currentPlayer]+=500; currentReySpan.classList.add('heal');}
-            if(card.name==="Fragmentos Blitz"){alert("Fragmento Blitz recolectado");}
-            break;
+            if(card.name==="Tótem"){playerLife[currentPlayer]+=500; createParticles(currentReySpan,'#00ff00');}
+            if(card.name==="Fragmentos Blitz"){alert("Fragmento Blitz recolectado");} break;
     }
-
-    playerHands[currentPlayer].splice(i,1);
-    updateLife();
-    checkVictory();
-    renderHand();
-
-    // Quitar clases de animación después
-    setTimeout(()=>{
-        enemyReySpan.classList.remove('damage','heal');
-        currentReySpan.classList.remove('damage','heal');
-    },500);
+    playerHands[currentPlayer].splice(i,1); updateLife(); checkVictory(); renderHand();
 }
+function endTurn(){ currentPlayer=currentPlayer===0?1:0; currentPlayerSpan.textContent=`Jugador ${currentPlayer+1}`; renderHand(); }
+function updateLife(){ player1LifeSpan.style.width=playerLife[0]/10+'%'; player2LifeSpan.style.width=playerLife[1]/10+'%'; }
+function checkVictory(){ if(playerLife[0]<=0){ alert("Jugador 2 gana!"); resetGame();} if(playerLife[1]<=0){ alert("Jugador 1 gana!"); resetGame();} }
+function resetGame(){ playerLife=[1000,1000]; playerHands=[[],[]]; currentPlayer=0; currentPlayerSpan.textContent="Jugador 1"; updateLife(); renderHand(); }
 
-// Terminar turno
-function endTurn(){
-    currentPlayer = currentPlayer===0?1:0;
-    currentPlayerSpan.textContent=`Jugador ${currentPlayer+1}`;
-    renderHand();
-}
-
-// Actualizar vida
-function updateLife(){
-    player1LifeSpan.textContent=playerLife[0];
-    player2LifeSpan.textContent=playerLife[1];
-}
-
-// Comprobar victoria
-function checkVictory(){
-    if(playerLife[0]<=0){ alert("Jugador 2 gana!"); resetGame();}
-    if(playerLife[1]<=0){ alert("Jugador 1 gana!"); resetGame();}
-}
-
-// Reset juego
-function resetGame(){
-    playerLife=[1000,1000];
-    playerHands=[[],[]];
-    currentPlayer=0;
-    currentPlayerSpan.textContent="Jugador 1";
-    updateLife();
-    renderHand();
+// ===== PARTICULAS DE ATAQUE/CURA =====
+function createParticles(parent,color){
+    for(let i=0;i<20;i++){
+        const p=document.createElement('div');
+        p.style.position='absolute';
+        p.style.width='6px';
+        p.style.height='6px';
+        p.style.background=color;
+        p.style.borderRadius='50%';
+        p.style.left=parent.getBoundingClientRect().left + Math.random()*parent.offsetWidth + 'px';
+        p.style.top=parent.getBoundingClientRect().top + Math.random()*parent.offsetHeight + 'px';
+        p.style.zIndex=20;
+        document.body.appendChild(p);
+        setTimeout(()=>{ p.remove(); },600);
+    }
 }
 </script>
 
 </body>
 </html>
-
